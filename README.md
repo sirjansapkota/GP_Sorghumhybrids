@@ -4,7 +4,7 @@ Mixed model analysis of phenotypes and heterosis in a line x tester hybrids data
 ## data
 Phenotypic data for hybrids is in "**HDP_Heterosis_ByBlock.csv**", contains hybrid values (Hyb_v), mid parent heterosi (MPH), etc.
 
-**GRM_phased_thinned.RData** has the genomic relationship matrices (GRM) calculated from the marker data, G = inbred additive GRM, A = hybrid additive GRM, and D = hbyrid dominance matrix.
+**GRM_phased_thinned.RData** has the genomic relationship matrices (GRM) calculated from the marker data, G = inbred additive GRM, A = hybrid additive GRM, and D = hybrid dominance matrix.
 
 ## results
 Output folder has RData files that has details from model fit and variance components and BLUPs/GBLUPs.
