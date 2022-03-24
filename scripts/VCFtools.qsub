@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#PBS -N vcftools_filtering
+#PBS -l select=1:ncpus=1:mem=370gb,walltime=20:00:00
+#PBS -q tillers
+
+BASE_DIR="/scratch1/ssapkot/"
+INPUT_PATH="/zfs/tillers/panicle/HDP_data/VCFs/recalibrated/"
+OUTPUT_PATH="${BASE_DIR}/Filtered_phased"
+VCF="SAP_WGS_filtered.recode" # sans vcf suffix
+
+cd ${OUTPUT_PATH}
+
+#/zfs/tillers/panicle/software/vcftools-0.1.16/bin/vcftools --vcf ${INPUT_PATH}/${VCF}.vcf --out SAP_WGS --plink
+
+### Filtering genotypes
+#/zfs/tillers/panicle/software/vcftools-0.1.16/bin/vcftools --gzvcf ${INPUT_PATH}/${VCF}.vcf.gz --max-missing 0.01 --maf 0.02 --recode --out SAp_WGS_filtered
+
+
+### Convert vcf to 012 format
+/zfs/tillers/panicle/software/vcftools-0.1.16/bin/vcftools --vcf ${VCF}.vcf --thin 100 --012 --out SAP_WGS_filtered
+
+
+## Filtering all heterozygous sites from vcf file
+#/zfs/tillers/panicle/software/bcftools-1.10.2/bcftools filter -e 'GT=="het"'  ${INPUT_PATH}/${VCF}.vcf.gz -o SAP_WGS_hom_all

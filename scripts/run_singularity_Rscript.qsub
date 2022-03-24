@@ -1,0 +1,17 @@
+#!/bin/bash
+#PBS -N singularity_GBLUPs
+#PBS -l select=1:ncpus=1:mem=15gb,walltime=70:00:00
+#PBS -j oe
+#PBS -q tillers
+
+echo "START ------------------------------"
+
+#module load anaconda3/5.1.0-gcc/8.3.1
+#source activate r_env_360
+
+cd /zfs/tillers/panicle/ssapkot/git_repo/GP_Sorghumhybrids
+
+#singularity run -B /zfs,/scratch1 /zfs/tillers/panicle/singularity_containers/GenPred.sif Rscript scripts/GBLUP_CV2_CV3_sommer.R CUSo07750 CUSo09108
+singularity run -B /zfs /zfs/tillers/panicle/singularity_containers/GenPred.sif Rscript scripts/new_scripts/T2_T1F_multitrait_LxT_prediction.R
+
+echo "FINISH_______________________"

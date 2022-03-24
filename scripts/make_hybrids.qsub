@@ -1,0 +1,87 @@
+#!/bin/bash
+#PBS -N Hybrid_markers
+#PBS -l select=1:ncpus=2:mem=64gb:interconnect=1g,walltime=10:00:00
+#PBS -j oe
+
+echo 'START---------------------'
+
+module load anaconda3/5.0.1-gcc/8.3.1
+source activate r_env_360
+
+src='/scratch1/ssapkot/HDP/'
+
+R -e "
+setwd('/scratch1/ssapkot/HDP')
+
+library(data.table)
+
+## load haplotype marker data
+marker <- fread('/zfs/tillers/panicle/HDP_data/haploblocks/block_matrix.named.tsv',header=T)
+hap_id <- marker$V1
+marker <- as.matrix(marker[,-1]) ## remove the first column and save as matrix and also transpose to n x p matrix
+rownames(marker) <- hap_id
+marker <- t(marker)
+parents <- rownames(marker) ## extract individual cuso that have genotype data
+
+#### male and female combos based on sap master file
+sap_master <- read.csv('/zfs/tillers/panicle/ssapkot/HDP/data/SAP_Master.csv', header=T)
+
+## subset all B_lines some can be restorers but include for now and evaluate later
+B_lines <- sap_master[which(grepl('B',sap_master$Rf)=="TRUE"),][1]
+R_lines <- sap_master[which(grepl('R',sap_master$Rf)=="TRUE"),][1]
+
+## key to use for CUSo IDs to PI numbers
+key <- read.table('/zfs/tillers/panicle/HDP_data/CuSo_to_PI.csv', sep=',', header=F)
+colnames(key) <- c('CUSo_Geno','PI')
+
+Females <- key[which(key$PI %in% B_lines$Taxa),]
+Males <- key[which(key$PI %in% R_lines$Taxa),]
+
+## read in the hybrids with genotypic data
+#f1_ind <- read.table('/scratch1/ssapkot/unphased_snps/hybrid_geno.txt', header=T)
+
+### Males and females not in hybrid geno file
+diff_males <- setdiff(Males$CUSo_Geno,f1_ind$Male)
+diff_females <- setdiff(Females$CUSo_Geno,f1_ind$Female)
+
+## list of males and females with genotype data
+males <- union(Males$CUSo_Geno,f1_ind$Male)
+females <- union(Females$CUSo_Geno,f1_ind$Female)
+male_geno <- males[males %in% parents]
+female_geno <- females[females %in% parents] 
+
+## list of all possible A X R combinations
+SC <- expand.grid(female_geno,male_geno)
+SC$hybrid <- paste0(SC$Var1,'_',SC$Var2)
+colnames(SC) <- c('Female','Male','SC_hybrid')
+f1_ind <- SC ## so we don't need to change the variables in the loop below
+
+f1_geno <- as.matrix(diag(0,nrow(f1_ind),ncol(marker)))
+
+for (i in 1:nrow(f1_ind)){
+    f1 <- f1_ind[i,'Female.Male']
+    p1 <- f1_ind[i,'Female']
+    p2 <- f1_ind[i,'Male']
+
+    for (j in 1:ncol(marker)){
+        x <- NULL
+        if (marker[p1,j]==0&marker[p2,j]==0){
+            x <- 0
+        }   else if (marker[p1,j]==1&marker[p2,j]==1){
+                    x <- 2
+        }   else {
+                    x <- 1
+        }
+    f1_geno[i,j] <- x
+    }
+}
+
+rownames(f1_geno) <- f1_ind[,3]
+colnames(f1_geno) <- colnames(marker)
+
+write.table(f1_geno, file='data/hom_snps/Hybrid_markers_hom.txt')
+
+"
+
+echo '------------------FINISH'
+
